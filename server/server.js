@@ -21,9 +21,14 @@ const app = express();
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: [
+            "http://localhost:5173",
+            "https://smart-task-manager-n9oa.onrender.com/"
+        ],
+        credentials: true
     })
 );
+
 
 app.use(express.json());
 

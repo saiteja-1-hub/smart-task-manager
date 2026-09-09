@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -38,14 +39,13 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.json({
         success: true,
-        message:
-            "Smart To-Do Manager API is running",
+        message: "Smart To-Do Manager API is running",
     });
 });
 
 
 // ============================================
-// DATABASE TEST
+// DATABASE CONNECTION TEST
 // ============================================
 
 app.get("/api/test-db", async (req, res) => {
@@ -56,20 +56,81 @@ app.get("/api/test-db", async (req, res) => {
 
         res.json({
             success: true,
-            message:
-                "PostgreSQL connection successful",
+            message: "PostgreSQL connection successful",
             time: result.rows[0].now,
         });
     } catch (error) {
         console.error(
-            "Database error:",
+            "Database connection error:",
             error
         );
 
         res.status(500).json({
             success: false,
-            message:
-                "Database connection failed",
+            message: "Database connection failed",
+        });
+    }
+});
+
+
+// ============================================
+// DATABASE DIAGNOSTIC
+// ============================================
+
+app.get("/api/db-test", async (req, res) => {
+    try {
+        // Check current database, user and schema
+        const connectionResult = await pool.query(`
+            SELECT
+                current_database() AS database,
+                current_user AS user,
+                current_schema() AS schema
+        `);
+
+        // Check available tables
+        const tablesResult = await pool.query(`
+            SELECT
+                table_schema,
+                table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        `);
+
+        // Check specifically for categories
+        const categoriesResult = await pool.query(`
+            SELECT COUNT(*) AS count
+            FROM public.categories
+        `);
+
+        // Check specifically for tasks
+        const tasksResult = await pool.query(`
+            SELECT COUNT(*) AS count
+            FROM public.tasks
+        `);
+
+        res.json({
+            success: true,
+
+            connection: connectionResult.rows[0],
+
+            tables: tablesResult.rows,
+
+            data: {
+                categories: categoriesResult.rows[0].count,
+                tasks: tasksResult.rows[0].count,
+            },
+        });
+    } catch (error) {
+        console.error(
+            "Database diagnostic error:",
+            error
+        );
+
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            code: error.code,
         });
     }
 });
@@ -121,3 +182,4 @@ app.listen(PORT, () => {
         `Server is running on port ${PORT}`
     );
 });
+

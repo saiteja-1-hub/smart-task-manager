@@ -23,7 +23,7 @@ app.use(
     cors({
         origin: [
             "http://localhost:5173",
-            "https://smart-task-manager-n9oa.onrender.com/"
+            "https://smart-task-manager-jla4.onrender.com/"
         ],
         credentials: true
     })

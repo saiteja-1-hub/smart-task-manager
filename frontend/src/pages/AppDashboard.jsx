@@ -1,4 +1,3 @@
- 
 import { useEffect, useMemo, useState } from "react";
 import {
     Plus,
@@ -26,7 +25,7 @@ import Loading from "../components/Loading";
 import ErrorMessage from "../components/ErrorMessage";
 
 import { useTasks } from "../context/TaskContext";
-import { useAuth } from "../context/AuthContext";
+
 
 const AppDashboard = () => {
     const {
@@ -45,37 +44,35 @@ const AppDashboard = () => {
         fetchTasks,
     } = useTasks();
 
-    const { user } = useAuth();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [priorityFilter, setPriorityFilter] =
-        useState("all");
+    const [priorityFilter, setPriorityFilter] = useState("all");
     const [sortBy, setSortBy] = useState("smart");
 
-    const [createTaskOpen, setCreateTaskOpen] =
-        useState(false);
+    const [createTaskOpen, setCreateTaskOpen] = useState(false);
 
     const [editTask, setEditTask] = useState(null);
 
-    const [detailsTask, setDetailsTask] =
-        useState(null);
+    const [detailsTask, setDetailsTask] = useState(null);
 
-    const [deleteTask, setDeleteTask] =
-        useState(null);
+    const [deleteTask, setDeleteTask] = useState(null);
 
-    const [profileOpen, setProfileOpen] =
-        useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
 
-    const [categoriesOpen, setCategoriesOpen] =
-        useState(false);
+    const [categoriesOpen, setCategoriesOpen] = useState(false);
 
+
+    /*
+     * Fetch tasks when dashboard loads
+     */
     useEffect(() => {
         fetchTasks();
     }, []);
 
+
     /*
-     * Normalize task status.
+     * Normalize task status
      *
      * Backend statuses:
      * TODO
@@ -85,17 +82,18 @@ const AppDashboard = () => {
     const normalizeTaskStatus = (task) => {
         return String(
             task?.status ||
-                (task?.completed
-                    ? "COMPLETED"
-                    : "TODO")
+            (task?.completed
+                ? "COMPLETED"
+                : "TODO")
         )
             .toLowerCase()
             .replace(/-/g, "_")
             .trim();
     };
 
+
     /*
-     * Normalize priority.
+     * Normalize task priority
      */
     const normalizeTaskPriority = (task) => {
         return String(
@@ -105,17 +103,13 @@ const AppDashboard = () => {
             .trim();
     };
 
+
     /*
-     * Filter tasks.
-     *
-     * IMPORTANT:
-     *
-     * Pending = TODO
-     * In Progress = IN_PROGRESS
-     * Completed = COMPLETED
+     * Filter and sort tasks
      */
     const filteredTasks = useMemo(() => {
         let result = tasks.filter((task) => {
+
             const title = String(
                 task?.title || ""
             ).toLowerCase();
@@ -128,86 +122,95 @@ const AppDashboard = () => {
                 .toLowerCase()
                 .trim();
 
+
+            /*
+             * Search
+             */
             const matchesSearch =
                 !search ||
                 title.includes(search) ||
                 description.includes(search);
 
+
+            /*
+             * Status
+             */
             const taskStatus =
                 normalizeTaskStatus(task);
 
+
+            /*
+             * Priority
+             */
             const taskPriority =
                 normalizeTaskPriority(task);
 
+
             let matchesStatus = true;
 
-            /*
-             * STATUS FILTER
-             */
+
             if (statusFilter !== "all") {
+
                 const selectedStatus =
                     String(statusFilter)
                         .toLowerCase()
                         .replace(/-/g, "_")
                         .trim();
 
+
                 /*
-                 * Pending is a UI label.
-                 *
-                 * Database status is TODO.
+                 * Pending / TODO
                  */
                 if (
-                    selectedStatus ===
-                        "pending" ||
+                    selectedStatus === "pending" ||
                     selectedStatus === "todo"
                 ) {
                     matchesStatus =
                         taskStatus === "todo";
                 }
 
+
                 /*
                  * In Progress
                  */
                 else if (
-                    selectedStatus ===
-                    "in_progress"
+                    selectedStatus === "in_progress"
                 ) {
                     matchesStatus =
-                        taskStatus ===
-                        "in_progress";
+                        taskStatus === "in_progress";
                 }
+
 
                 /*
                  * Completed
                  */
                 else if (
-                    selectedStatus ===
-                    "completed"
+                    selectedStatus === "completed"
                 ) {
                     matchesStatus =
-                        taskStatus ===
-                        "completed";
+                        taskStatus === "completed";
                 }
+
 
                 /*
                  * Fallback
                  */
                 else {
                     matchesStatus =
-                        taskStatus ===
-                        selectedStatus;
+                        taskStatus === selectedStatus;
                 }
             }
 
+
             /*
-             * PRIORITY FILTER
+             * Priority filter
              */
             const matchesPriority =
                 priorityFilter === "all" ||
                 taskPriority ===
-                    String(
-                        priorityFilter
-                    ).toLowerCase();
+                String(priorityFilter)
+                    .toLowerCase();
+
 
             return (
                 matchesSearch &&
@@ -216,17 +219,24 @@ const AppDashboard = () => {
             );
         });
 
+
         /*
-         * SORTING
+         * Copy array before sorting
          */
         result = [...result];
 
+
+        /*
+         * Priority sorting
+         */
         if (sortBy === "priority") {
+
             const priorityOrder = {
                 high: 1,
                 medium: 2,
                 low: 3,
             };
+
 
             result.sort((a, b) => {
                 return (
@@ -240,65 +250,91 @@ const AppDashboard = () => {
             });
         }
 
+
+        /*
+         * Due date sorting
+         */
         if (sortBy === "due_date") {
+
             result.sort((a, b) => {
+
                 const dateA = a?.due_date
                     ? new Date(
-                          a.due_date
-                      ).getTime()
+                        a.due_date
+                    ).getTime()
                     : Infinity;
+
 
                 const dateB = b?.due_date
                     ? new Date(
-                          b.due_date
-                      ).getTime()
+                        b.due_date
+                    ).getTime()
                     : Infinity;
+
 
                 return dateA - dateB;
             });
         }
 
+
+        /*
+         * Newest first
+         */
         if (sortBy === "newest") {
+
             result.sort((a, b) => {
+
                 const dateA =
                     new Date(
                         a?.created_at ||
-                            a?.createdAt ||
-                            0
+                        a?.createdAt ||
+                        0
                     ).getTime();
+
 
                 const dateB =
                     new Date(
                         b?.created_at ||
-                            b?.createdAt ||
-                            0
+                        b?.createdAt ||
+                        0
                     ).getTime();
+
 
                 return dateB - dateA;
             });
         }
 
+
+        /*
+         * Oldest first
+         */
         if (sortBy === "oldest") {
+
             result.sort((a, b) => {
+
                 const dateA =
                     new Date(
                         a?.created_at ||
-                            a?.createdAt ||
-                            0
+                        a?.createdAt ||
+                        0
                     ).getTime();
+
 
                 const dateB =
                     new Date(
                         b?.created_at ||
-                            b?.createdAt ||
-                            0
+                        b?.createdAt ||
+                        0
                     ).getTime();
+
 
                 return dateA - dateB;
             });
         }
 
+
         return result;
+
     }, [
         tasks,
         searchTerm,
@@ -307,16 +343,29 @@ const AppDashboard = () => {
         sortBy,
     ]);
 
+
     /*
      * Create task
      */
-    const handleCreateTask = async (
-        taskData
-    ) => {
-        await createTask(taskData);
-        setCreateTaskOpen(false);
-        await fetchTasks();
+    const handleCreateTask = async (taskData) => {
+
+        try {
+
+            await createTask(taskData);
+
+            setCreateTaskOpen(false);
+
+            await fetchTasks();
+
+        } catch (err) {
+
+            console.error(
+                "Failed to create task:",
+                err
+            );
+        }
     };
+
 
     /*
      * Update task
@@ -325,29 +374,61 @@ const AppDashboard = () => {
         id,
         taskData
     ) => {
-        await updateTask(id, taskData);
-        setEditTask(null);
-        await fetchTasks();
+
+        try {
+
+            await updateTask(
+                id,
+                taskData
+            );
+
+            setEditTask(null);
+
+            await fetchTasks();
+
+        } catch (err) {
+
+            console.error(
+                "Failed to update task:",
+                err
+            );
+        }
     };
+
 
     /*
      * Delete task
      */
     const handleDeleteTask = async () => {
+
         if (!deleteTask) {
             return;
         }
 
+
         try {
-            await removeTask(
+
+            const id =
                 deleteTask?.id ??
-                    deleteTask?._id ??
-                    deleteTask?.task_id
-            );
+                deleteTask?._id ??
+                deleteTask?.task_id;
+
+
+            if (!id) {
+                throw new Error(
+                    "Task ID is missing."
+                );
+            }
+
+
+            await removeTask(id);
 
             setDeleteTask(null);
+
             await fetchTasks();
+
         } catch (err) {
+
             console.error(
                 "Failed to delete task:",
                 err
@@ -355,10 +436,9 @@ const AppDashboard = () => {
         }
     };
 
+
     /*
-     * Start Task
-     *
-     * This directly changes:
+     * Start recommended task
      *
      * TODO
      * ↓
@@ -366,11 +446,14 @@ const AppDashboard = () => {
      */
     const handleRecommendationEdit =
         async (task) => {
+
             try {
+
                 const id =
                     task?.id ??
                     task?._id ??
                     task?.task_id;
+
 
                 if (!id) {
                     throw new Error(
@@ -378,13 +461,16 @@ const AppDashboard = () => {
                     );
                 }
 
+
                 await changeTaskStatus(
                     id,
                     "IN_PROGRESS"
                 );
 
                 await fetchTasks();
+
             } catch (err) {
+
                 console.error(
                     "Failed to start task:",
                     err
@@ -392,50 +478,64 @@ const AppDashboard = () => {
             }
         };
 
+
     /*
      * View recommended task
      */
     const handleRecommendationView =
         (task) => {
+
             setDetailsTask(task);
         };
 
+
     /*
-     * Refresh
+     * Refresh tasks
      */
     const handleRefresh = async () => {
-        await fetchTasks();
+
+        try {
+
+            await fetchTasks();
+
+        } catch (err) {
+
+            console.error(
+                "Failed to refresh tasks:",
+                err
+            );
+        }
     };
+
 
     return (
         <div className="app-dashboard">
-           ```jsx
-        <Navbar
-         onProfileClick={() =>
-         setProfileOpen(true)
-        }
-        onCreateTask={() =>
-          setCreateTaskOpen(true)
-       }
-       />
 
+            <Navbar
+                onProfileClick={() =>
+                    setProfileOpen(true)
+                }
+                onCreateTask={() =>
+                    setCreateTaskOpen(true)
+                }
+            />
 
 
             <main className="dashboard-main">
+
                 <div className="dashboard-container">
 
                     <WelcomeSection
-                        user={user}
                         onCreateTask={() =>
-                            setCreateTaskOpen(
-                                true
-                            )
+                            setCreateTaskOpen(true)
                         }
                     />
+
 
                     <StatsCards
                         tasks={tasks}
                     />
+
 
                     <SmartRecommendation
                         tasks={tasks}
@@ -447,25 +547,29 @@ const AppDashboard = () => {
                         }
                     />
 
+
                     <ProductivityInsights
                         tasks={tasks}
                     />
+
 
                     <div className="task-section">
 
                         <div className="task-section-header">
 
                             <div>
+
                                 <h2>
                                     My Tasks
                                 </h2>
 
                                 <p>
-                                    Manage and
-                                    organize your
-                                    work
+                                    Manage and organize
+                                    your work
                                 </p>
+
                             </div>
+
 
                             <div className="task-section-actions">
 
@@ -476,12 +580,15 @@ const AppDashboard = () => {
                                         handleRefresh
                                     }
                                 >
+
                                     <RefreshCw
                                         size={16}
                                     />
 
                                     Refresh
+
                                 </button>
+
 
                                 <button
                                     type="button"
@@ -492,12 +599,15 @@ const AppDashboard = () => {
                                         )
                                     }
                                 >
+
                                     <Tags
                                         size={16}
                                     />
 
                                     Categories
+
                                 </button>
+
 
                                 <button
                                     type="button"
@@ -508,38 +618,31 @@ const AppDashboard = () => {
                                         )
                                     }
                                 >
+
                                     <Plus
                                         size={17}
                                     />
 
                                     Create Task
+
                                 </button>
 
                             </div>
+
                         </div>
 
+
                         <TaskToolbar
-                            searchTerm={
-                                searchTerm
-                            }
-                            setSearchTerm={
-                                setSearchTerm
-                            }
-                            statusFilter={
-                                statusFilter
-                            }
-                            setStatusFilter={
-                                setStatusFilter
-                            }
-                            priorityFilter={
-                                priorityFilter
-                            }
-                            setPriorityFilter={
-                                setPriorityFilter
-                            }
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            statusFilter={statusFilter}
+                            setStatusFilter={setStatusFilter}
+                            priorityFilter={priorityFilter}
+                            setPriorityFilter={setPriorityFilter}
                             sortBy={sortBy}
                             setSortBy={setSortBy}
                         />
+
 
                         {error && (
                             <ErrorMessage
@@ -547,30 +650,29 @@ const AppDashboard = () => {
                             />
                         )}
 
+
                         {loading ? (
+
                             <Loading />
+
                         ) : (
+
                             <TaskList
-                                tasks={
-                                    filteredTasks
-                                }
-                                onToggle={
-                                    toggleTask
-                                }
-                                onView={
-                                    setDetailsTask
-                                }
-                                onEdit={
-                                    setEditTask
-                                }
-                                onDelete={
-                                    setDeleteTask
-                                }
+                                tasks={filteredTasks}
+                                onToggle={toggleTask}
+                                onView={setDetailsTask}
+                                onEdit={setEditTask}
+                                onDelete={setDeleteTask}
                             />
+
                         )}
+
                     </div>
+
                 </div>
+
             </main>
+
 
             <CreateTaskModal
                 isOpen={createTaskOpen}
@@ -578,10 +680,9 @@ const AppDashboard = () => {
                     setCreateTaskOpen(false)
                 }
                 categories={categories}
-                onCreate={
-                    handleCreateTask
-                }
+                onCreate={handleCreateTask}
             />
+
 
             <EditTaskModal
                 isOpen={Boolean(editTask)}
@@ -590,33 +691,28 @@ const AppDashboard = () => {
                 onClose={() =>
                     setEditTask(null)
                 }
-                onUpdate={
-                    handleUpdateTask
-                }
+                onUpdate={handleUpdateTask}
             />
 
+
             <TaskDetailsModal
-                isOpen={Boolean(
-                    detailsTask
-                )}
+                isOpen={Boolean(detailsTask)}
                 task={detailsTask}
                 onClose={() =>
                     setDetailsTask(null)
                 }
             />
 
+
             <ConfirmDeleteModal
-                isOpen={Boolean(
-                    deleteTask
-                )}
+                isOpen={Boolean(deleteTask)}
                 task={deleteTask}
                 onClose={() =>
                     setDeleteTask(null)
                 }
-                onConfirm={
-                    handleDeleteTask
-                }
+                onConfirm={handleDeleteTask}
             />
+
 
             <ProfileModal
                 isOpen={profileOpen}
@@ -624,6 +720,7 @@ const AppDashboard = () => {
                     setProfileOpen(false)
                 }
             />
+
 
             <CategoriesModal
                 isOpen={categoriesOpen}
@@ -641,11 +738,10 @@ const AppDashboard = () => {
                     deleteCategory
                 }
             />
+
         </div>
     );
 };
 
-export default AppDashboard;
- 
 
- 
+export default AppDashboard;

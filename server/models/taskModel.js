@@ -1,10 +1,13 @@
 const pool = require("../config/db");
 
-const getTasksByUser = async (userId) => {
+// ============================================
+// GET ALL TASKS
+// ============================================
+
+const getTasks = async () => {
     const query = `
         SELECT
             t.id,
-            t.user_id,
             t.category_id,
             t.title,
             t.description,
@@ -17,7 +20,6 @@ const getTasksByUser = async (userId) => {
         FROM tasks t
         LEFT JOIN categories c
             ON t.category_id = c.id
-        WHERE t.user_id = $1
         ORDER BY
             CASE
                 WHEN t.status = 'COMPLETED' THEN 1
@@ -27,16 +29,20 @@ const getTasksByUser = async (userId) => {
             t.created_at DESC
     `;
 
-    const result = await pool.query(query, [userId]);
+    const result = await pool.query(query);
 
     return result.rows;
 };
 
-const getTaskById = async (taskId, userId) => {
+
+// ============================================
+// GET SINGLE TASK
+// ============================================
+
+const getTaskById = async (taskId) => {
     const query = `
         SELECT
             t.id,
-            t.user_id,
             t.category_id,
             t.title,
             t.description,
@@ -49,19 +55,20 @@ const getTaskById = async (taskId, userId) => {
         FROM tasks t
         LEFT JOIN categories c
             ON t.category_id = c.id
-        WHERE t.id = $1 AND t.user_id = $2
+        WHERE t.id = $1
     `;
 
-    const result = await pool.query(query, [
-        taskId,
-        userId,
-    ]);
+    const result = await pool.query(query, [taskId]);
 
     return result.rows[0];
 };
 
+
+// ============================================
+// CREATE TASK
+// ============================================
+
 const createTask = async (
-    userId,
     categoryId,
     title,
     description,
@@ -71,7 +78,6 @@ const createTask = async (
 ) => {
     const query = `
         INSERT INTO tasks (
-            user_id,
             category_id,
             title,
             description,
@@ -79,12 +85,11 @@ const createTask = async (
             status,
             due_date
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
     `;
 
     const values = [
-        userId,
         categoryId || null,
         title,
         description || null,
@@ -98,9 +103,13 @@ const createTask = async (
     return result.rows[0];
 };
 
+
+// ============================================
+// UPDATE TASK
+// ============================================
+
 const updateTask = async (
     taskId,
-    userId,
     categoryId,
     title,
     description,
@@ -118,7 +127,7 @@ const updateTask = async (
             status = $5,
             due_date = $6,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = $7 AND user_id = $8
+        WHERE id = $7
         RETURNING *
     `;
 
@@ -130,7 +139,6 @@ const updateTask = async (
         status,
         dueDate || null,
         taskId,
-        userId,
     ];
 
     const result = await pool.query(query, values);
@@ -138,24 +146,30 @@ const updateTask = async (
     return result.rows[0];
 };
 
-const deleteTask = async (taskId, userId) => {
+
+// ============================================
+// DELETE TASK
+// ============================================
+
+const deleteTask = async (taskId) => {
     const query = `
         DELETE FROM tasks
-        WHERE id = $1 AND user_id = $2
+        WHERE id = $1
         RETURNING id
     `;
 
-    const result = await pool.query(query, [
-        taskId,
-        userId,
-    ]);
+    const result = await pool.query(query, [taskId]);
 
     return result.rows[0];
 };
 
+
+// ============================================
+// UPDATE TASK STATUS
+// ============================================
+
 const updateTaskStatus = async (
     taskId,
-    userId,
     status
 ) => {
     const query = `
@@ -163,21 +177,25 @@ const updateTaskStatus = async (
         SET
             status = $1,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2 AND user_id = $3
+        WHERE id = $2
         RETURNING *
     `;
 
     const result = await pool.query(query, [
         status,
         taskId,
-        userId,
     ]);
 
     return result.rows[0];
 };
 
+
+// ============================================
+// EXPORT
+// ============================================
+
 module.exports = {
-    getTasksByUser,
+    getTasks,
     getTaskById,
     createTask,
     updateTask,

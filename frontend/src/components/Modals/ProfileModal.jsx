@@ -1,128 +1,86 @@
 import {
     Mail,
     ShieldCheck,
-    User
+    User,
 } from "lucide-react";
 
 import Modal from "./Modal";
-import { useAuth } from "../../context/AuthContext";
 
-const ProfileModal = ({
-    isOpen,
-    onClose
-}) => {
-
-    const { user } = useAuth();
-
-    const name =
-        user?.name ||
-        user?.username ||
-        "User";
-
-    const email =
-        user?.email ||
-        "No email";
+const ProfileModal = ({ isOpen, onClose }) => {
+    if (!isOpen) {
+        return null;
+    }
 
     return (
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="My profile"
-            subtitle="Your account information."
+            title="Profile"
         >
-
             <div className="profile-modal-content">
 
+                {/* Profile Header */}
                 <div className="profile-header">
-
-                    <div className="large-avatar">
-                        {name
-                            .charAt(0)
-                            .toUpperCase()
-                        }
+                    <div className="profile-avatar">
+                        <User size={32} />
                     </div>
 
-                    <h3>
-                        {name}
-                    </h3>
-
-                    <p>
-                        {email}
-                    </p>
-
+                    <div className="profile-info">
+                        <h3>Task Manager User</h3>
+                        <p>Shared Workspace</p>
+                    </div>
                 </div>
 
+                {/* Profile Details */}
                 <div className="profile-details">
 
-                    <div className="profile-detail">
-
+                    <div className="profile-detail-item">
                         <div className="profile-detail-icon">
-                            <User size={17} />
+                            <User size={18} />
                         </div>
 
                         <div>
-                            <span>
-                                Name
-                            </span>
-
-                            <strong>
-                                {name}
-                            </strong>
+                            <span>Name</span>
+                            <strong>Task Manager User</strong>
                         </div>
-
                     </div>
 
-                    <div className="profile-detail">
-
+                    <div className="profile-detail-item">
                         <div className="profile-detail-icon">
-                            <Mail size={17} />
+                            <Mail size={18} />
                         </div>
 
                         <div>
-                            <span>
-                                Email
-                            </span>
-
-                            <strong>
-                                {email}
-                            </strong>
+                            <span>Email</span>
+                            <strong>Shared Workspace</strong>
                         </div>
-
                     </div>
 
-                    <div className="profile-detail">
-
+                    <div className="profile-detail-item">
                         <div className="profile-detail-icon">
-                            <ShieldCheck size={17} />
+                            <ShieldCheck size={18} />
                         </div>
 
                         <div>
-                            <span>
-                                Account
-                            </span>
-
-                            <strong>
-                                Active
-                            </strong>
+                            <span>Access</span>
+                            <strong>Shared Task Manager</strong>
                         </div>
-
                     </div>
 
                 </div>
 
-                <div className="modal-footer">
+                {/* Information */}
+                <div className="profile-notice">
+                    <ShieldCheck size={18} />
 
-                    <button
-                        className="button-primary full-width"
-                        onClick={onClose}
-                    >
-                        Done
-                    </button>
-
+                    <p>
+                        This task manager is running in
+                        shared workspace mode. No login or
+                        authentication is required.
+                    </p>
                 </div>
 
             </div>
-
         </Modal>
     );
 };

@@ -9,22 +9,28 @@ const {
     changeTaskStatus,
 } = require("../controllers/taskController");
 
-const authMiddleware = require("../middleware/authMiddleware");
-
 const router = express.Router();
 
-router.use(authMiddleware);
 
+// GET all tasks
 router.get("/", getTasks);
 
+// GET single task
 router.get("/:id", getTask);
 
+// CREATE task
 router.post("/", addTask);
 
+// UPDATE task
 router.put("/:id", editTask);
 
+// DELETE task
 router.delete("/:id", removeTask);
 
-router.patch("/:id/status", changeTaskStatus);
+// CHANGE task status
+router.patch(
+    "/:id/status",
+    changeTaskStatus
+);
 
 module.exports = router;

@@ -1,7 +1,5 @@
- 
 import {
     createContext,
-    useCallback,
     useContext,
     useEffect,
     useState,
@@ -10,376 +8,176 @@ import {
 import taskService from "../services/taskService";
 import categoryService from "../services/categoryService";
 
-import { useAuth } from "./AuthContext";
+const TaskContext = createContext(null);
 
-
-const TaskContext = createContext();
-
-
-// ============================================
-// TASK PROVIDER
-// ============================================
-
-const TaskProvider = ({ children }) => {
-    const { isAuthenticated } = useAuth();
-
-
-    // ========================================
-    // STATE
-    // ========================================
-
+export const TaskProvider = ({ children }) => {
     const [tasks, setTasks] = useState([]);
+    const [categories, setCategories] = useState([]);
 
-    const [categories, setCategories] =
-        useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const [loading, setLoading] =
-        useState(false);
-
-    const [error, setError] =
-        useState("");
-
-
-    // ========================================
+    // =========================
     // FETCH TASKS
-    // ========================================
-
-    const fetchTasks = useCallback(
-        async () => {
-            try {
-                setError("");
-
-                const response =
-                    await taskService.getTasks();
-
-                console.log(
-                    "Tasks received from API:",
-                    response
-                );
-
-                let taskList = [];
-
-                if (Array.isArray(response)) {
-                    taskList = response;
-                } else if (
-                    Array.isArray(
-                        response?.tasks
-                    )
-                ) {
-                    taskList =
-                        response.tasks;
-                } else if (
-                    Array.isArray(
-                        response?.data
-                    )
-                ) {
-                    taskList =
-                        response.data;
-                } else if (
-                    Array.isArray(
-                        response?.data
-                            ?.tasks
-                    )
-                ) {
-                    taskList =
-                        response.data.tasks;
-                }
-
-                console.log(
-                    "Tasks stored in state:",
-                    taskList
-                );
-
-                setTasks(taskList);
-            } catch (err) {
-                console.error(
-                    "Failed to fetch tasks:",
-                    err
-                );
-
-                setTasks([]);
-
-                setError(
-                    err?.response
-                        ?.data?.message ||
-                    err?.response
-                        ?.data?.error ||
-                    err?.message ||
-                    "Failed to load tasks."
-                );
-            }
-        },
-        []
-    );
-
-
-    // ========================================
-    // FETCH CATEGORIES
-    // ========================================
-
-    const fetchCategories =
-        useCallback(
-            async () => {
-                try {
-                    const response =
-                        await categoryService.getCategories();
-
-                    console.log(
-                        "Categories received from API:",
-                        response
-                    );
-
-                    let categoryList =
-                        [];
-
-                    if (
-                        Array.isArray(
-                            response
-                        )
-                    ) {
-                        categoryList =
-                            response;
-                    } else if (
-                        Array.isArray(
-                            response?.categories
-                        )
-                    ) {
-                        categoryList =
-                            response.categories;
-                    } else if (
-                        Array.isArray(
-                            response?.data
-                        )
-                    ) {
-                        categoryList =
-                            response.data;
-                    } else if (
-                        Array.isArray(
-                            response?.data
-                                ?.categories
-                        )
-                    ) {
-                        categoryList =
-                            response.data
-                                .categories;
-                    }
-
-                    setCategories(
-                        categoryList
-                    );
-                } catch (err) {
-                    console.error(
-                        "Failed to fetch categories:",
-                        err
-                    );
-
-                    setCategories([]);
-
-                    console.warn(
-                        "Categories could not be loaded."
-                    );
-                }
-            },
-            []
-        );
-
-
-    // ========================================
-    // REFRESH ALL DATA
-    // ========================================
-
-    const refreshData =
-        useCallback(
-            async () => {
-                if (
-                    !isAuthenticated
-                ) {
-                    return;
-                }
-
-                setLoading(true);
-                setError("");
-
-                try {
-                    await Promise.all([
-                        fetchTasks(),
-                        fetchCategories(),
-                    ]);
-                } catch (err) {
-                    console.error(
-                        "Failed to refresh dashboard:",
-                        err
-                    );
-                } finally {
-                    setLoading(false);
-                }
-            },
-            [
-                isAuthenticated,
-                fetchTasks,
-                fetchCategories,
-            ]
-        );
-
-
-    // ========================================
-    // LOAD DATA WHEN AUTHENTICATED
-    // ========================================
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            refreshData();
-        } else {
-            setTasks([]);
-            setCategories([]);
-            setError("");
-        }
-    }, [
-        isAuthenticated,
-        refreshData,
-    ]);
-
-
-    // ========================================
-    // CREATE TASK
-    // ========================================
-
-    const createTask = async (
-        taskData
-    ) => {
+    // =========================
+    const fetchTasks = async () => {
         try {
-            setError("");
+            setLoading(true);
+            setError(null);
 
-            console.log(
-                "Creating task:",
-                taskData
+            const data = await taskService.getTasks();
+
+            setTasks(
+                Array.isArray(data)
+                    ? data
+                    : data?.tasks || []
             );
-
-            const createdTask =
-                await taskService.createTask(
-                    taskData
-                );
-
-            console.log(
-                "Created task:",
-                createdTask
-            );
-
-            await fetchTasks();
-
-            return createdTask;
         } catch (err) {
-            console.error(
-                "Failed to create task:",
-                err
-            );
+            console.error("Failed to fetch tasks:", err);
 
             setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to create task."
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to fetch tasks"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // =========================
+    // FETCH CATEGORIES
+    // =========================
+    const fetchCategories = async () => {
+        try {
+            const data = await categoryService.getCategories();
+
+            setCategories(
+                Array.isArray(data)
+                    ? data
+                    : data?.categories || []
+            );
+        } catch (err) {
+            console.error("Failed to fetch categories:", err);
+        }
+    };
+
+    // =========================
+    // CREATE TASK
+    // =========================
+    const createTask = async (taskData) => {
+        try {
+            setError(null);
+
+            const data = await taskService.createTask(taskData);
+
+            const newTask = data?.task || data;
+
+            if (newTask) {
+                setTasks((prevTasks) => [
+                    newTask,
+                    ...prevTasks,
+                ]);
+            }
+
+            return data;
+        } catch (err) {
+            console.error("Failed to create task:", err);
+
+            setError(
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to create task"
             );
 
             throw err;
         }
     };
 
-
-    // ========================================
-    // UPDATE COMPLETE TASK
-    // ========================================
-
-    const updateTask = async (
-        id,
-        taskData
-    ) => {
+    // =========================
+    // UPDATE TASK
+    // =========================
+    const updateTask = async (id, taskData) => {
         try {
-            setError("");
+            setError(null);
 
-            console.log(
-                "Updating task:",
+            const data = await taskService.updateTask(
                 id,
                 taskData
             );
 
-            const updatedTask =
-                await taskService.updateTask(
-                    id,
-                    taskData
+            const updatedTask = data?.task || data;
+
+            if (updatedTask) {
+                setTasks((prevTasks) =>
+                    prevTasks.map((task) => {
+                        const taskId =
+                            task.id ??
+                            task._id ??
+                            task.task_id;
+
+                        if (String(taskId) === String(id)) {
+                            return {
+                                ...task,
+                                ...updatedTask,
+                            };
+                        }
+
+                        return task;
+                    })
                 );
+            }
 
-            await fetchTasks();
-
-            return updatedTask;
+            return data;
         } catch (err) {
-            console.error(
-                "Failed to update task:",
-                err
-            );
+            console.error("Failed to update task:", err);
 
             setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to update task."
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to update task"
             );
 
             throw err;
         }
     };
 
-
-    // ========================================
+    // =========================
     // CHANGE TASK STATUS
-    //
-    // Used by:
-    // - Checkbox
-    // - Start Task button
-    //
-    // PATCH /tasks/:id/status
-    // ========================================
-
-    const changeTaskStatus = async (
-        id,
-        status
-    ) => {
+    // =========================
+    const changeTaskStatus = async (id, status) => {
         try {
-            setError("");
+            setError(null);
 
-            if (!id) {
-                throw new Error(
-                    "Task ID is missing."
-                );
-            }
-
-            console.log(
-                "Changing task status:",
+            const data = await taskService.updateTask(
+                id,
                 {
-                    id,
                     status,
                 }
             );
 
-            const updatedTask =
-                await taskService.changeTaskStatus(
-                    id,
-                    status
-                );
+            const updatedTask = data?.task || data;
 
-            console.log(
-                "Task status updated:",
-                updatedTask
+            setTasks((prevTasks) =>
+                prevTasks.map((task) => {
+                    const taskId =
+                        task.id ??
+                        task._id ??
+                        task.task_id;
+
+                    if (String(taskId) === String(id)) {
+                        return {
+                            ...task,
+                            ...updatedTask,
+                            status,
+                        };
+                    }
+
+                    return task;
+                })
             );
 
-            // Refresh task list
-            await fetchTasks();
-
-            return updatedTask;
+            return data;
         } catch (err) {
             console.error(
                 "Failed to change task status:",
@@ -387,112 +185,73 @@ const TaskProvider = ({ children }) => {
             );
 
             setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to update task."
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to change task status"
             );
 
             throw err;
         }
     };
 
-
-    // ========================================
+    // =========================
     // TOGGLE TASK
-    //
-    // Checkbox:
-    // TODO → COMPLETED
-    // COMPLETED → TODO
-    // ========================================
+    // =========================
+    const toggleTask = async (task) => {
+        const id =
+            task?.id ??
+            task?._id ??
+            task?.task_id;
 
-    const toggleTask = async (
-        task
-    ) => {
-        try {
-            setError("");
-
-            const id =
-                task?.id ??
-                task?._id ??
-                task?.task_id;
-
-            if (!id) {
-                throw new Error(
-                    "Task ID is missing."
-                );
-            }
-
-            const currentStatus =
-                String(
-                    task?.status || ""
-                )
-                    .toUpperCase()
-                    .replace(
-                        /-/g,
-                        "_"
-                    );
-
-            let newStatus;
-
-            if (
-                currentStatus ===
-                    "COMPLETED" ||
-                currentStatus ===
-                    "DONE"
-            ) {
-                newStatus = "TODO";
-            } else {
-                newStatus =
-                    "COMPLETED";
-            }
-
-            console.log(
-                "Toggling task:",
-                {
-                    id,
-                    currentStatus,
-                    newStatus,
-                }
-            );
-
-            await changeTaskStatus(
-                id,
-                newStatus
-            );
-        } catch (err) {
-            console.error(
-                "Failed to toggle task:",
-                err
-            );
-
-            throw err;
+        if (!id) {
+            throw new Error("Task ID is missing.");
         }
+
+        const currentStatus = String(
+            task?.status ||
+            (task?.completed
+                ? "COMPLETED"
+                : "TODO")
+        )
+            .toUpperCase()
+            .replace(/-/g, "_");
+
+        const newStatus =
+            currentStatus === "COMPLETED"
+                ? "TODO"
+                : "COMPLETED";
+
+        return changeTaskStatus(
+            id,
+            newStatus
+        );
     };
 
-
-    // ========================================
+    // =========================
     // DELETE TASK
-    // ========================================
-
-    const removeTask = async (
-        id
-    ) => {
+    // =========================
+    const removeTask = async (id) => {
         try {
-            setError("");
+            setError(null);
 
-            console.log(
-                "Deleting task:",
-                id
+            const data =
+                await taskService.deleteTask(id);
+
+            setTasks((prevTasks) =>
+                prevTasks.filter((task) => {
+                    const taskId =
+                        task.id ??
+                        task._id ??
+                        task.task_id;
+
+                    return (
+                        String(taskId) !==
+                        String(id)
+                    );
+                })
             );
 
-            await taskService.deleteTask(
-                id
-            );
-
-            await fetchTasks();
+            return data;
         } catch (err) {
             console.error(
                 "Failed to delete task:",
@@ -500,69 +259,49 @@ const TaskProvider = ({ children }) => {
             );
 
             setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to delete task."
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to delete task"
             );
 
             throw err;
         }
     };
 
-
-    // ========================================
+    // =========================
     // CREATE CATEGORY
-    // ========================================
-
+    // =========================
     const createCategory = async (
         categoryData
     ) => {
         try {
-            setError("");
-
-            const category =
+            const data =
                 await categoryService.createCategory(
                     categoryData
                 );
 
             await fetchCategories();
 
-            return category;
+            return data;
         } catch (err) {
             console.error(
                 "Failed to create category:",
                 err
             );
 
-            setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to create category."
-            );
-
             throw err;
         }
     };
 
-
-    // ========================================
+    // =========================
     // UPDATE CATEGORY
-    // ========================================
-
+    // =========================
     const updateCategory = async (
         id,
         categoryData
     ) => {
         try {
-            setError("");
-
-            const category =
+            const data =
                 await categoryService.updateCategory(
                     id,
                     categoryData
@@ -570,94 +309,88 @@ const TaskProvider = ({ children }) => {
 
             await fetchCategories();
 
-            return category;
+            return data;
         } catch (err) {
             console.error(
                 "Failed to update category:",
                 err
             );
 
-            setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to update category."
-            );
-
             throw err;
         }
     };
 
-
-    // ========================================
+    // =========================
     // DELETE CATEGORY
-    // ========================================
-
-    const deleteCategory = async (
-        id
-    ) => {
+    // =========================
+    const deleteCategory = async (id) => {
         try {
-            setError("");
+            const data =
+                await categoryService.deleteCategory(
+                    id
+                );
 
-            await categoryService.deleteCategory(
-                id
+            setCategories((prevCategories) =>
+                prevCategories.filter(
+                    (category) => {
+                        const categoryId =
+                            category.id ??
+                            category._id ??
+                            category.category_id;
+
+                        return (
+                            String(categoryId) !==
+                            String(id)
+                        );
+                    }
+                )
             );
 
-            await fetchCategories();
-
-            await fetchTasks();
+            return data;
         } catch (err) {
             console.error(
                 "Failed to delete category:",
                 err
             );
 
-            setError(
-                err?.response
-                    ?.data?.message ||
-                err?.response
-                    ?.data?.error ||
-                err?.message ||
-                "Failed to delete category."
-            );
-
             throw err;
         }
     };
 
+    // =========================
+    // INITIAL LOAD
+    // =========================
+    useEffect(() => {
+        fetchTasks();
+        fetchCategories();
+    }, []);
 
-    // ========================================
-    // PROVIDER
-    // ========================================
-
+    // =========================
+    // CONTEXT VALUE
+    // =========================
     return (
         <TaskContext.Provider
             value={{
+                // Data
                 tasks,
                 categories,
 
+                // State
                 loading,
                 error,
 
+                // Tasks
                 fetchTasks,
-                fetchCategories,
-                refreshData,
-
                 createTask,
                 updateTask,
-
-                changeTaskStatus,
-                toggleTask,
-
                 removeTask,
+                toggleTask,
+                changeTaskStatus,
 
+                // Categories
                 createCategory,
                 updateCategory,
                 deleteCategory,
-
-                setError,
             }}
         >
             {children}
@@ -665,22 +398,19 @@ const TaskProvider = ({ children }) => {
     );
 };
 
-
-// ============================================
-// HOOK
-// ============================================
-
+// =========================
+// CUSTOM HOOK
+// =========================
 export const useTasks = () => {
-    return useContext(
-        TaskContext
-    );
+    const context = useContext(TaskContext);
+
+    if (!context) {
+        throw new Error(
+            "useTasks must be used inside TaskProvider"
+        );
+    }
+
+    return context;
 };
-
-
-export {
-    TaskProvider,
-};
-
 
 export default TaskContext;
- 

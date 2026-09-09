@@ -1,76 +1,116 @@
 const pool = require("../config/db");
 
-const getCategoriesByUser = async (userId) => {
+
+// ============================================
+// GET ALL CATEGORIES
+// ============================================
+
+const getCategories = async () => {
     const query = `
-        SELECT id, user_id, name, created_at
+        SELECT
+            id,
+            name,
+            created_at
         FROM categories
-        WHERE user_id = $1
         ORDER BY name ASC
     `;
 
-    const result = await pool.query(query, [userId]);
+    const result = await pool.query(query);
 
     return result.rows;
 };
 
-const getCategoryById = async (categoryId, userId) => {
+
+// ============================================
+// GET SINGLE CATEGORY
+// ============================================
+
+const getCategoryById = async (categoryId) => {
     const query = `
-        SELECT id, user_id, name, created_at
+        SELECT
+            id,
+            name,
+            created_at
         FROM categories
-        WHERE id = $1 AND user_id = $2
+        WHERE id = $1
     `;
 
-    const result = await pool.query(query, [categoryId, userId]);
+    const result = await pool.query(query, [
+        categoryId,
+    ]);
 
     return result.rows[0];
 };
 
-const createCategory = async (userId, name) => {
+
+// ============================================
+// CREATE CATEGORY
+// ============================================
+
+const createCategory = async (name) => {
     const query = `
-        INSERT INTO categories (user_id, name)
-        VALUES ($1, $2)
-        RETURNING id, user_id, name, created_at
+        INSERT INTO categories (name)
+        VALUES ($1)
+        RETURNING id, name, created_at
     `;
 
-    const result = await pool.query(query, [userId, name]);
+    const result = await pool.query(query, [
+        name,
+    ]);
 
     return result.rows[0];
 };
 
-const updateCategory = async (categoryId, userId, name) => {
+
+// ============================================
+// UPDATE CATEGORY
+// ============================================
+
+const updateCategory = async (
+    categoryId,
+    name
+) => {
     const query = `
         UPDATE categories
         SET name = $1
-        WHERE id = $2 AND user_id = $3
-        RETURNING id, user_id, name, created_at
+        WHERE id = $2
+        RETURNING id, name, created_at
     `;
 
     const result = await pool.query(query, [
         name,
         categoryId,
-        userId,
     ]);
 
     return result.rows[0];
 };
 
-const deleteCategory = async (categoryId, userId) => {
+
+// ============================================
+// DELETE CATEGORY
+// ============================================
+
+const deleteCategory = async (categoryId) => {
     const query = `
         DELETE FROM categories
-        WHERE id = $1 AND user_id = $2
+        WHERE id = $1
         RETURNING id
     `;
 
     const result = await pool.query(query, [
         categoryId,
-        userId,
     ]);
 
     return result.rows[0];
 };
 
+
+// ============================================
+// EXPORT
+// ============================================
+
 module.exports = {
-    getCategoriesByUser,
+    getCategories,
     getCategoryById,
     createCategory,
     updateCategory,

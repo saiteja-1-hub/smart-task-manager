@@ -1,21 +1,25 @@
 const {
-    getCategoriesByUser,
+    getCategories,
     getCategoryById,
     createCategory,
     updateCategory,
     deleteCategory,
 } = require("../models/categoryModel");
 
-const getCategories = async (
+
+// ============================================
+// GET ALL CATEGORIES
+// GET /api/categories
+// ============================================
+
+const getAllCategories = async (
     req,
     res,
     next
 ) => {
     try {
         const categories =
-            await getCategoriesByUser(
-                req.user.id
-            );
+            await getCategories();
 
         res.status(200).json({
             success: true,
@@ -26,6 +30,12 @@ const getCategories = async (
     }
 };
 
+
+// ============================================
+// GET SINGLE CATEGORY
+// GET /api/categories/:id
+// ============================================
+
 const getCategory = async (
     req,
     res,
@@ -34,14 +44,14 @@ const getCategory = async (
     try {
         const category =
             await getCategoryById(
-                req.params.id,
-                req.user.id
+                req.params.id
             );
 
         if (!category) {
             return res.status(404).json({
                 success: false,
-                message: "Category not found",
+                message:
+                    "Category not found",
             });
         }
 
@@ -53,6 +63,12 @@ const getCategory = async (
         next(error);
     }
 };
+
+
+// ============================================
+// CREATE CATEGORY
+// POST /api/categories
+// ============================================
 
 const addCategory = async (
     req,
@@ -62,28 +78,38 @@ const addCategory = async (
     try {
         const { name } = req.body;
 
-        if (!name || !name.trim()) {
+        if (
+            !name ||
+            !String(name).trim()
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "Category name is required",
+                message:
+                    "Category name is required",
             });
         }
 
         const category =
             await createCategory(
-                req.user.id,
-                name.trim()
+                String(name).trim()
             );
 
         res.status(201).json({
             success: true,
-            message: "Category created successfully",
+            message:
+                "Category created successfully",
             category,
         });
     } catch (error) {
         next(error);
     }
 };
+
+
+// ============================================
+// UPDATE CATEGORY
+// PUT /api/categories/:id
+// ============================================
 
 const editCategory = async (
     req,
@@ -93,36 +119,47 @@ const editCategory = async (
     try {
         const { name } = req.body;
 
-        if (!name || !name.trim()) {
+        if (
+            !name ||
+            !String(name).trim()
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "Category name is required",
+                message:
+                    "Category name is required",
             });
         }
 
         const category =
             await updateCategory(
                 req.params.id,
-                req.user.id,
-                name.trim()
+                String(name).trim()
             );
 
         if (!category) {
             return res.status(404).json({
                 success: false,
-                message: "Category not found",
+                message:
+                    "Category not found",
             });
         }
 
         res.status(200).json({
             success: true,
-            message: "Category updated successfully",
+            message:
+                "Category updated successfully",
             category,
         });
     } catch (error) {
         next(error);
     }
 };
+
+
+// ============================================
+// DELETE CATEGORY
+// DELETE /api/categories/:id
+// ============================================
 
 const removeCategory = async (
     req,
@@ -132,28 +169,34 @@ const removeCategory = async (
     try {
         const category =
             await deleteCategory(
-                req.params.id,
-                req.user.id
+                req.params.id
             );
 
         if (!category) {
             return res.status(404).json({
                 success: false,
-                message: "Category not found",
+                message:
+                    "Category not found",
             });
         }
 
         res.status(200).json({
             success: true,
-            message: "Category deleted successfully",
+            message:
+                "Category deleted successfully",
         });
     } catch (error) {
         next(error);
     }
 };
 
+
+// ============================================
+// EXPORT
+// ============================================
+
 module.exports = {
-    getCategories,
+    getCategories: getAllCategories,
     getCategory,
     addCategory,
     editCategory,

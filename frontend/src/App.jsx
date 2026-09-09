@@ -1,21 +1,16 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import AppDashboard from "./pages/AppDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => {
     return (
         <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<AppDashboard />} />
 
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<AppDashboard />} />
-            </Route>
+            <Route
+                path="*"
+                element={<Navigate to="/" replace />}
+            />
         </Routes>
     );
 };

@@ -8,20 +8,22 @@ const {
     removeCategory,
 } = require("../controllers/categoryController");
 
-const authMiddleware = require("../middleware/authMiddleware");
-
 const router = express.Router();
 
-router.use(authMiddleware);
 
+// GET all categories
 router.get("/", getCategories);
 
+// GET single category
 router.get("/:id", getCategory);
 
+// CREATE category
 router.post("/", addCategory);
 
+// UPDATE category
 router.put("/:id", editCategory);
 
+// DELETE category
 router.delete("/:id", removeCategory);
 
 module.exports = router;

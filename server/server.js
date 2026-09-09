@@ -6,7 +6,6 @@ dotenv.config();
 
 const pool = require("./config/db");
 
-const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 
@@ -23,12 +22,11 @@ app.use(
     cors({
         origin: [
             "http://localhost:5173",
-            "https://smart-task-manager-jla4.onrender.com/"
+            "https://smart-task-manager-n9oa.onrender.com",
         ],
-        credentials: true
+        credentials: true,
     })
 );
-
 
 app.use(express.json());
 
@@ -40,7 +38,8 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.json({
         success: true,
-        message: "Smart To-Do Manager API is running",
+        message:
+            "Smart To-Do Manager API is running",
     });
 });
 
@@ -57,7 +56,8 @@ app.get("/api/test-db", async (req, res) => {
 
         res.json({
             success: true,
-            message: "PostgreSQL connection successful",
+            message:
+                "PostgreSQL connection successful",
             time: result.rows[0].now,
         });
     } catch (error) {
@@ -68,7 +68,8 @@ app.get("/api/test-db", async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: "Database connection failed",
+            message:
+                "Database connection failed",
         });
     }
 });
@@ -77,11 +78,6 @@ app.get("/api/test-db", async (req, res) => {
 // ============================================
 // API ROUTES
 // ============================================
-
-app.use(
-    "/api/auth",
-    authRoutes
-);
 
 app.use(
     "/api/tasks",

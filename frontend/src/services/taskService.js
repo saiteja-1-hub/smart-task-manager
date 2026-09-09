@@ -1,6 +1,4 @@
- 
 import api from "./api";
-
 
 // ============================================
 // GET ALL TASKS
@@ -9,15 +7,20 @@ import api from "./api";
 const getTasks = async () => {
     const response = await api.get("/tasks");
 
-    if (Array.isArray(response.data)) {
-        return response.data;
-    }
+    return response.data;
+};
 
-    return (
-        response.data?.tasks ||
-        response.data?.data ||
-        []
+
+// ============================================
+// GET SINGLE TASK
+// ============================================
+
+const getTask = async (id) => {
+    const response = await api.get(
+        `/tasks/${id}`
     );
+
+    return response.data;
 };
 
 
@@ -31,16 +34,12 @@ const createTask = async (taskData) => {
         taskData
     );
 
-    return (
-        response.data?.task ||
-        response.data?.data ||
-        response.data
-    );
+    return response.data;
 };
 
 
 // ============================================
-// UPDATE COMPLETE TASK
+// UPDATE TASK
 // ============================================
 
 const updateTask = async (
@@ -52,19 +51,15 @@ const updateTask = async (
         taskData
     );
 
-    return (
-        response.data?.task ||
-        response.data?.data ||
-        response.data
-    );
+    return response.data;
 };
 
 
 // ============================================
-// CHANGE TASK STATUS
+// UPDATE TASK STATUS
 // ============================================
 
-const changeTaskStatus = async (
+const updateTaskStatus = async (
     id,
     status
 ) => {
@@ -75,11 +70,7 @@ const changeTaskStatus = async (
         }
     );
 
-    return (
-        response.data?.task ||
-        response.data?.data ||
-        response.data
-    );
+    return response.data;
 };
 
 
@@ -102,11 +93,11 @@ const deleteTask = async (id) => {
 
 const taskService = {
     getTasks,
+    getTask,
     createTask,
     updateTask,
-    changeTaskStatus,
+    updateTaskStatus,
     deleteTask,
 };
 
 export default taskService;
- 

@@ -1,10 +1,14 @@
 -- ============================================
 -- SMART TO-DO MANAGER DATABASE SCHEMA
+-- NO AUTHENTICATION / SHARED WORKSPACE
 -- ============================================
+
 
 -- ============================================
 -- USERS TABLE
 -- ============================================
+-- Kept for compatibility with any old data.
+-- The application no longer uses this table.
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -28,19 +32,12 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
 
-    user_id INTEGER NOT NULL,
-
     name VARCHAR(100) NOT NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_category_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT unique_user_category
-        UNIQUE (user_id, name)
+    CONSTRAINT unique_category_name
+        UNIQUE (name)
 );
 
 
@@ -50,8 +47,6 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
-
-    user_id INTEGER NOT NULL,
 
     category_id INTEGER,
 
@@ -69,30 +64,34 @@ CREATE TABLE IF NOT EXISTS tasks (
 
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_task_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
     CONSTRAINT fk_task_category
         FOREIGN KEY (category_id)
         REFERENCES categories(id)
         ON DELETE SET NULL,
 
     CONSTRAINT check_task_priority
-        CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH')),
+        CHECK (
+            priority IN (
+                'LOW',
+                'MEDIUM',
+                'HIGH'
+            )
+        ),
 
     CONSTRAINT check_task_status
-        CHECK (status IN ('TODO', 'IN_PROGRESS', 'COMPLETED'))
+        CHECK (
+            status IN (
+                'TODO',
+                'IN_PROGRESS',
+                'COMPLETED'
+            )
+        )
 );
 
 
 -- ============================================
 -- INDEXES
 -- ============================================
-
-CREATE INDEX IF NOT EXISTS idx_tasks_user_id
-ON tasks(user_id);
 
 CREATE INDEX IF NOT EXISTS idx_tasks_category_id
 ON tasks(category_id);
